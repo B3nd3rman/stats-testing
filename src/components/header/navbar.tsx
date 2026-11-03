@@ -3,17 +3,29 @@ import NavbarDropdown from "./navbar-dropdown";
 import NavSearchbar from "./navbar-searchbar";
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { getAllTeamData } from '@/queries/getTeamData'
-import type { Team } from "@/types/Team";
+import { getEventData } from '@/queries/getEventData'
+import type { Team } from "@/types/Team"
+import type { Event } from "@/types/Event"
 
 function Navbar() {
     const navigate = useNavigate({ from: '/teams' })
 
-    const TeamResponse = useSuspenseQuery(getAllTeamData);
+    const TeamResponse = useSuspenseQuery(getAllTeamData)
+    const EventResponse = useSuspenseQuery(getEventData);
 
     const TeamData: Team[] = TeamResponse.data
+    const EventData: Event[] = EventResponse.data
 
-    const handleSearch = (value: string) => {
+    const handleTeamSearch = (value: string) => {
         navigate({ to: `/teams/${value}` })
+    }
+
+    const handleEventSearch = (value: number[]) => {
+        var teamList: Team[] = TeamData.filter((team) => {
+            return value.includes(team.team_number)
+        })
+
+        navigate({to:'/EPA-Compare', state: { teams: teamList }})
     }
 
     return (
@@ -25,7 +37,7 @@ function Navbar() {
                 </a>
             </div>
             <div className="mr-4">
-                <NavSearchbar onSelected={handleSearch} items={TeamData} />
+                <NavSearchbar onSelectedTeam={handleTeamSearch} onSelectedEvent={handleEventSearch} teams={TeamData} events={EventData} />
             </div>
         </div>
     );

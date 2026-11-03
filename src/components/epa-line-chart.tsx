@@ -8,6 +8,8 @@ import { Combobox } from "./combobox";
 import TeamMultiselector, { type Option } from "./team-multiselect";
 import { Card, CardContent, CardDescription, CardTitle } from "./ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "./ui/chart";
+import { getEventData } from '@/queries/getEventData'
+import type { Event } from "@/types/Event"
 
 // List of preset colors to be used first, in order
 let COLOR_LIST = ["red", "blue", "green", "purple", "yellow", "orange", "magenta", "maroon", "olive", "brown"];
@@ -16,6 +18,7 @@ let colorIndex = 0;
 function EPALineChart({ passedOptions = [], className = "" }: { passedOptions?: Option[], className?: string }) {
     // Load Data
     const AllTeamsResponse = useSuspenseQuery(getAllTeamData);
+    const EventResponse = useSuspenseQuery(getEventData);
     const DefaultTeamResponse = useSuspenseQuery(getTeamData('24124'));
     const DefaultTeam2Response = useSuspenseQuery(getTeamData('26145'));
 
@@ -52,6 +55,9 @@ function EPALineChart({ passedOptions = [], className = "" }: { passedOptions?: 
 
     if (AllTeamsResponse.isError) return <main><div>An error occured.</div></main>
     const AllTeamData: Team[] = AllTeamsResponse.data
+
+    if (EventResponse.isError) return <main><div>An error occured.</div></main>
+    const EventData: Event[] = EventResponse.data
 
     // Create options from AllTeamData in the Option type format
     const TeamOptions: Option[] = AllTeamData.reduce((acc: Option[], team: Team) => {
@@ -90,6 +96,8 @@ function EPALineChart({ passedOptions = [], className = "" }: { passedOptions?: 
                     onChange={setSelected}
                     delay={10}
                     defaultOptions={TeamOptions}
+                    events={EventData}
+                    TeamData={AllTeamData}
                     emptyIndicator={<p className="text-center text-lg leading-10 text-gray-600 dark:text-gray-400">no results found.</p>}
                     className="mb-2"
                 />

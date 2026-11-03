@@ -160,8 +160,10 @@ const TeamMultiselector = React.forwardRef<MultipleSelectorRef, MultipleSelector
     {
       value,
       onChange,
-      placeholder = "Select teams to view...",
+      placeholder = "Select teams or events to view...",
       defaultOptions: arrayDefaultOptions = [],
+      events,
+      TeamData,
       options: arrayOptions,
       delay,
       onSearch,
@@ -206,6 +208,20 @@ const TeamMultiselector = React.forwardRef<MultipleSelectorRef, MultipleSelector
       }),
       [selected],
     );
+
+    const getOptionsFromEvent = (teams: number[]) => {
+        var teamList: Team[] = TeamData.filter((team) => {
+            return teams.includes(team.team_number)
+        })
+        var optionList: Option[] = teamList.reduce((acc: Option[], team: Team) => {
+            const valueStr = team.team_number.toString();
+            if (!selected.some(item => item.value === valueStr)) {
+                acc.push({ value: valueStr, team: team });
+            }
+            return acc;
+        }, [])
+    return optionList
+    }
 
     const handleClickOutside = (event: MouseEvent | TouchEvent) => {
       if (
@@ -525,7 +541,7 @@ const TeamMultiselector = React.forwardRef<MultipleSelectorRef, MultipleSelector
                             }
                             return numA - numB;
                           })
-                          .slice(0, 8)
+                          .slice(0, 10)
                           .map((option) => {
                             return (
                               <CommandItem
@@ -556,6 +572,53 @@ const TeamMultiselector = React.forwardRef<MultipleSelectorRef, MultipleSelector
                             );
                           })}
                       </>
+                      <>
+                          {events
+                            .filter((event) => event.event_name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) || event.event_code.toLowerCase().includes(debouncedSearchTerm.toLowerCase())) // Filter for relevant searches. Searches for name and number
+                            .sort((a, b) => {
+                              var nameA = a.event_name.toLowerCase();
+                              var nameB = b.event_name.toLowerCase();
+
+                              const searchValue = debouncedSearchTerm;
+
+                              var startsWithA = nameA.startsWith(searchValue.toLowerCase());
+                              var startsWithB = nameB.startsWith(searchValue.toLowerCase());
+
+                              if(startsWithA && !startsWithB) return -1;
+                              if(!startsWithA && startsWithB) return 1;
+
+                              const array = [nameA,nameB].sort();
+                              if(array[0] == nameA) return -1;
+                              return 1;
+                            })
+                            .slice(0, 10)
+                            .map((event) => {
+                              return (
+                                <CommandItem
+                                  key={event.event_code}
+                                  value={event.event_name.toString()}
+                                  disabled={event.disable}
+                                  onMouseDown={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                  }}
+                                  onSelect={() => {
+                                    setInputValue('');
+                                    const optionList = getOptionsFromEvent(event.team_list);
+                                    const newOptions = [...selected, ...optionList];
+                                    setSelected(newOptions);
+                                    onChange?.(newOptions);
+                                  }}
+                                  className={cn(
+                                    'cursor-pointer',
+                                    event.disable && 'cursor-default text-muted-foreground',
+                                  )}
+                                >
+                                  <div className="font-bold text-base">{event.event_code}</div> {event.event_name}
+                                </CommandItem>
+                              );
+                            })}
+                        </>
                     </CommandGroup>
                   ))}
                 </>

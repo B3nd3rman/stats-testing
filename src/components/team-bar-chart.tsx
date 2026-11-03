@@ -9,14 +9,15 @@ import TeamMultiselector, { type Option } from "./team-multiselect";
 import TeamStatDropdown from "./team-stat-dropdown";
 import { Card, CardContent, CardDescription, CardTitle } from "./ui/card";
 import { ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent } from "./ui/chart";
+import { getEventData } from '@/queries/getEventData'
+import type { Event } from "@/types/Event"
 
 function TeamBarChart({ passedOptions = [], className = "" }: { passedOptions?: Option[], className?: string }) {
     // Load Data
     const AllTeamsResponse = useSuspenseQuery(getAllTeamData);
+    const EventResponse = useSuspenseQuery(getEventData);
     const DefaultTeamResponse = useSuspenseQuery(getTeamData('24124'));
     const DefaultTeam2Response = useSuspenseQuery(getTeamData('26145'));
-
-    console.log(passedOptions.length <= 0)
 
     // Create selected teams state, and propagate with two default teams
     const DefaultOptions: Option[] = passedOptions.length <= 0 ? [{ value: "24124", team: DefaultTeamResponse.data }, { value: "26145", team: DefaultTeam2Response.data }] : passedOptions
@@ -34,9 +35,10 @@ function TeamBarChart({ passedOptions = [], className = "" }: { passedOptions?: 
     })
 
     if (AllTeamsResponse.isError) return <main><div>An error occured.</div></main>
-
-
     const AllTeamData: Team[] = AllTeamsResponse.data
+
+    if (EventResponse.isError) return <main><div>An error occured.</div></main>
+    const EventData: Event[] = EventResponse.data
 
     // Create options from AllTeamData in the Option type format
     const TeamOptions: Option[] = AllTeamData.reduce((acc: Option[], team: Team) => {
@@ -114,6 +116,8 @@ function TeamBarChart({ passedOptions = [], className = "" }: { passedOptions?: 
                     onChange={setSelected}
                     delay={10}
                     defaultOptions={TeamOptions}
+                    events={EventData}
+                    TeamData={AllTeamData}
                     emptyIndicator={<p className="text-center text-lg leading-10 text-gray-600 dark:text-gray-400">no results found.</p>}
                     className="mb-2"
                 />
